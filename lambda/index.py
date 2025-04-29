@@ -6,25 +6,15 @@ import urllib.error
 import re  # 正規表現モジュールをインポート
 import boto3
 
-# Lambda コンテキストからリージョンを抽出する関数
-def extract_region_from_arn(arn):
-    # ARN 形式: arn:aws:lambda:region:account-id:function:function-name
-    match = re.search('arn:aws:lambda:([^:]+):', arn)
-    if match:
-        return match.group(1)
-    return "us-east-1"  # デフォルト値
-
-# グローバル変数としてクライアントを初期化（初期値）
-bedrock_client = None
-
 # モデルID
 FASTAPI_URL = "https://eba9-34-16-166-116.ngrok-free.app"
 FASTAPI_BASE = os.environ.get("FASTAPI_URL")
 
 def lambda_handler(event, context):
     try:
-        messages = []
-        messages.append({"role": "user", "content": message})
+        raw_body = event.get("body") or ""
+        body = json.loads(raw_body)
+        message = ("message", "")
         # FAST APIを呼び出し
         payload = {
                 "prompt": message
@@ -37,10 +27,11 @@ def lambda_handler(event, context):
                 method = "POST"
                 )
         with urllib.request.urlopen(req) as res:
-            resp = json.loads(res.read().decode())
+            resp_text = res.read().decode()
+            resp_json = json.loads(resp_text)
         
         # アシスタントの応答を取得
-        assistant_response = resp("response", "")
+        assistant_response = resp_json.get("response", "")
         
         # アシスタントの応答を会話履歴に追加
         messages.append({
