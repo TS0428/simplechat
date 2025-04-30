@@ -8,20 +8,23 @@ import boto3
 
 # モデルID
 FASTAPI_URL = "https://eba9-34-16-166-116.ngrok-free.app"
-FASTAPI_BASE = os.environ.get("FASTAPI_URL")
 
 def lambda_handler(event, context):
     try:
         raw_body = event.get("body") or ""
         body = json.loads(raw_body)
-        message = ("message", "")
+        message = body["message"]
         # FAST APIを呼び出し
         payload = {
-                "prompt": message
+                "prompt": message,
+                "max_new_tokens": 512,
+                "temprature": 0.7,
+                "top_p": 0.9,
+                "do_sample": True
                 }
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
-                FAST_BASE + "/generate",
+                url = f"{FASTAPI_URL}/generate",
                 data = data
                 headers = {"Content-Type": "application/json"}
                 method = "POST"
@@ -31,13 +34,8 @@ def lambda_handler(event, context):
             resp_json = json.loads(resp_text)
         
         # アシスタントの応答を取得
-        assistant_response = resp_json.get("response", "")
+        assistant_response = resp_json.get("generated_text", "")
         
-        # アシスタントの応答を会話履歴に追加
-        messages.append({
-            "role": "assistant",
-            "content": assistant_response
-        })
         
         # 成功レスポンスの返却
         return {
